@@ -131,9 +131,6 @@
 #include <linux/clk.h>
 #include <linux/msm_ion.h>
 
-#ifdef CONFIG_CPU_FREQ_GOV_ONDEMAND_2_PHASE
-int set_two_phase_freq(int cpufreq);
-#endif
 
 #define MSM_SHARED_RAM_PHYS 0x40000000
 
@@ -4485,9 +4482,6 @@ static void __init msm8x60_init(struct msm_board_data *board_data)
 #endif
 	msm8x60_init_mmc();
 
-#ifdef CONFIG_CPU_FREQ_GOV_ONDEMAND_2_PHASE
-	set_two_phase_freq(1134000);
-#endif
 
 #if defined(CONFIG_PMIC8058_OTHC) || defined(CONFIG_PMIC8058_OTHC_MODULE)
 	msm8x60_init_pm8058_othc();
