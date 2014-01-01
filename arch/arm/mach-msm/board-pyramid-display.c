@@ -1704,9 +1704,6 @@ static int __init mipi_cmd_novatek_blue_qhd_pt_init(void)
 	pinfo.lcd.vsync_enable = TRUE;
 	pinfo.lcd.hw_vsync_mode = TRUE;
 	pinfo.lcd.refx100 = 6096;
-	pinfo.lcd.v_back_porch = 16;
-	pinfo.lcd.v_front_porch = 16;
-	pinfo.lcd.v_pulse_width = 4;
 	pinfo.mipi.mode = DSI_CMD_MODE;
 	pinfo.mipi.dst_format = DSI_CMD_DST_FORMAT_RGB888;
 	pinfo.mipi.vc = 0;
