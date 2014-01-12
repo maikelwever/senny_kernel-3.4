@@ -1670,12 +1670,18 @@ err_device_put:
 }
 
 static struct mipi_dsi_phy_ctrl dsi_cmd_mode_phy_db = {
-	{0x03, 0x01, 0x01, 0x00},
-	{0x96, 0x1E, 0x1E, 0x00, 0x3C, 0x3C, 0x1E, 0x28, 0x0b, 0x13, 0x04},
-	{0x7f, 0x00, 0x00, 0x00},
-	{0xee, 0x02, 0x86, 0x00},
-	{0x41, 0x9c, 0xb9, 0xd6, 0x00, 0x50, 0x48, 0x63, 0x01, 0x0f, 0x07,
-	 0x05, 0x14, 0x03, 0x03, 0x03, 0x54, 0x06, 0x10, 0x04, 0x03},
+/* DSI_BIT_CLK at 482MHz, 2 lane, RGB888 */
+                {0x03, 0x01, 0x01, 0x00},       /* regulator */
+                /* timing   */
+                {0x96, 0x1E, 0x1E, 0x00, 0x3C, 0x3C, 0x1E, 0x28,
+                0x0b, 0x13, 0x04},
+                {0x7f, 0x00, 0x00, 0x00},       /* phy ctrl */
+                {0xee, 0x02, 0x86, 0x00},       /* strength */
+                /* pll control */
+                {0x41, 0x9c, 0xb9, 0xd6, 0x00, 0x50, 0x48, 0x63,
+                0x01, 0x0f, 0x07,
+                0x05, 0x14, 0x03, 0x03, 0x03, 0x54, 0x06, 0x10, 0x04, 0x03 },
+
 };
 
 static int __init mipi_cmd_novatek_blue_qhd_pt_init(void)
@@ -1688,27 +1694,28 @@ static int __init mipi_cmd_novatek_blue_qhd_pt_init(void)
 	pinfo.pdest = DISPLAY_1;
 	pinfo.wait_cycle = 0;
 	pinfo.bpp = 24;
-	pinfo.lcdc.h_back_porch = 64;
-	pinfo.lcdc.h_front_porch = 96;
-	pinfo.lcdc.h_pulse_width = 32;
-	pinfo.lcdc.v_back_porch = 16;
-	pinfo.lcdc.v_front_porch = 16;
-	pinfo.lcdc.v_pulse_width = 4;
+        pinfo.lcdc.h_back_porch = 64;
+        pinfo.lcdc.h_front_porch = 96;
+        pinfo.lcdc.h_pulse_width = 32;
+        pinfo.lcdc.v_back_porch = 16;
+        pinfo.lcdc.v_front_porch = 16;
+        pinfo.lcdc.v_pulse_width = 4;
 	pinfo.lcdc.border_clr = 0;
 	pinfo.lcdc.underflow_clr = 0xff;
 	pinfo.lcdc.hsync_skew = 0;
 	pinfo.bl_max = 255;
 	pinfo.bl_min = 1;
 	pinfo.fb_num = 2;
-//	pinfo.clk_rate = 528000000;
+//	pinfo.clk_rate = 482000000;
 	pinfo.lcd.vsync_enable = TRUE;
 	pinfo.lcd.hw_vsync_mode = TRUE;
-//	pinfo.lcd.refx100 = 6096;
-	pinfo.mipi.frame_rate = 60;
+	pinfo.lcd.refx100 = 6096;
+//	pinfo.mipi.frame_rate = 60;
 	pinfo.mipi.mode = DSI_CMD_MODE;
 	pinfo.mipi.dst_format = DSI_CMD_DST_FORMAT_RGB888;
 	pinfo.mipi.vc = 0;
 	pinfo.mipi.rgb_swap = DSI_RGB_SWAP_BGR;
+	pinfo.mipi.esc_byte_ratio = 4;
 	pinfo.mipi.data_lane0 = TRUE;
 	pinfo.mipi.data_lane1 = TRUE;
 	pinfo.mipi.t_clk_post = 0x0a;
