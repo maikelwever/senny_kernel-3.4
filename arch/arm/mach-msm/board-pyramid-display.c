@@ -1694,6 +1694,11 @@ static int __init mipi_cmd_novatek_blue_qhd_pt_init(void)
 	pinfo.pdest = DISPLAY_1;
 	pinfo.wait_cycle = 0;
 	pinfo.bpp = 24;
+	
+        pinfo.width = 49;
+        pinfo.height = 87;
+
+	
         pinfo.lcdc.h_back_porch = 64;
         pinfo.lcdc.h_front_porch = 96;
         pinfo.lcdc.h_pulse_width = 32;
@@ -1701,9 +1706,9 @@ static int __init mipi_cmd_novatek_blue_qhd_pt_init(void)
         pinfo.lcdc.v_front_porch = 16;
         pinfo.lcdc.v_pulse_width = 4;
         
-       pinfo.lcd.primary_vsync_init = pinfo.yres;
-       pinfo.lcd.primary_rdptr_irq = 0;
-       pinfo.lcd.primary_start_pos = pinfo.yres +
+        pinfo.lcd.primary_vsync_init = pinfo.yres;
+        pinfo.lcd.primary_rdptr_irq = 0;
+        pinfo.lcd.primary_start_pos = pinfo.yres +
                pinfo.lcd.v_back_porch + pinfo.lcd.v_front_porch - 1;
         
 	pinfo.lcd.v_back_porch = 16;
