@@ -1709,9 +1709,9 @@ static int __init mipi_cmd_novatek_blue_qhd_pt_init(void)
         pinfo.lcd.primary_start_pos = pinfo.yres +
                pinfo.lcd.v_back_porch + pinfo.lcd.v_front_porch - 1;
         
-	pinfo.lcd.v_back_porch = 16;
-	pinfo.lcd.v_front_porch = 16;
-	pinfo.lcd.v_pulse_width = 4;
+//	pinfo.lcd.v_back_porch = 16;
+//	pinfo.lcd.v_front_porch = 16;
+//	pinfo.lcd.v_pulse_width = 4;
 
 	pinfo.lcdc.border_clr = 0;
 	pinfo.lcdc.underflow_clr = 0xff;
@@ -1719,12 +1719,12 @@ static int __init mipi_cmd_novatek_blue_qhd_pt_init(void)
 	pinfo.bl_max = 255;
 	pinfo.bl_min = 1;
 	pinfo.fb_num = 2;
-	pinfo.clk_rate = 482000000;
+//	pinfo.clk_rate = 482000000;
 //	pinfo.clk_rate = 454000000;
 	pinfo.lcd.vsync_enable = TRUE;
 	pinfo.lcd.hw_vsync_mode = TRUE;
 	pinfo.lcd.refx100 = 6200;
-	pinfo.mipi.frame_rate = 60;
+//	pinfo.mipi.frame_rate = 60;
 	pinfo.mipi.mode = DSI_CMD_MODE;
 	pinfo.mipi.dst_format = DSI_CMD_DST_FORMAT_RGB888;
 	pinfo.mipi.vc = 0;
