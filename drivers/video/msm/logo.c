@@ -28,6 +28,11 @@
 #define fb_height(fb)	((fb)->var.yres)
 #define fb_size(fb)	((fb)->var.xres * (fb)->var.yres * 2)
 
+#ifdef CONFIG_MACH_TENDERLOIN
+#define from565_r(x) ((((x) >> 11) & 0x1f) * 255 / 31)
+#define from565_g(x) ((((x) >> 5) & 0x3f) * 255 / 63)
+#define from565_b(x) (((x) & 0x1f) * 255 / 31)
+#else
 static void memset16(void *_ptr, unsigned short val, unsigned count)
 {
 	unsigned short *ptr = _ptr;
@@ -35,6 +40,7 @@ static void memset16(void *_ptr, unsigned short val, unsigned count)
 	while (count--)
 		*ptr++ = val;
 }
+#endif
 
 /* 565RLE image format: [count(2 bytes), rle(2 bytes)] */
 int load_565rle_image(char *filename, bool bf_supported)
@@ -42,7 +48,13 @@ int load_565rle_image(char *filename, bool bf_supported)
 	struct fb_info *info;
 	int fd, count, err = 0;
 	unsigned max;
-	unsigned short *data, *bits, *ptr;
+	unsigned short *data, *ptr;
+#ifdef CONFIG_MACH_TENDERLOIN
+        unsigned int *bits;
+	unsigned short compressed;
+#else
+        unsigned short *bits;
+#endif
 
 	info = registered_fb[0];
 	if (!info) {
@@ -58,6 +70,7 @@ int load_565rle_image(char *filename, bool bf_supported)
 		return -ENOENT;
 	}
 	count = sys_lseek(fd, (off_t)0, 2);
+        printk(KERN_ERR "%s: count=%d\n", __func__, count);
 	if (count <= 0) {
 		err = -EIO;
 		goto err_logo_close_file;
@@ -82,16 +95,30 @@ int load_565rle_image(char *filename, bool bf_supported)
 		       __func__, __LINE__, info->node);
 		goto err_logo_free_data;
 	}
-	bits = (unsigned short *)(info->screen_base);
-	while (count > 3) {
-		unsigned n = ptr[0];
-		if (n > max)
-			break;
-		memset16(bits, ptr[1], n << 1);
-		bits += n;
-		max -= n;
-		ptr += 2;
-		count -= 4;
+	if (info->screen_base) {
+#ifdef CONFIG_MACH_TENDERLOIN
+                bits = (unsigned int *)(info->screen_base);
+                while (count > 1) {
+                  compressed = *ptr;
+                  *bits = (from565_r(compressed) << 16) |
+                    (from565_g(compressed) << 8) | from565_b(compressed);
+                  bits += 1;
+                  ptr += 1;
+                  count -= 2;
+                }
+#else
+		bits = (unsigned short *)(info->screen_base);
+		while (count > 3) {
+                  unsigned n = ptr[0];
+                  if (n > max)
+                    break;
+                  memset16(bits, ptr[1], n << 1);
+                  bits += n;
+                  max -= n;
+                  ptr += 2;
+                  count -= 4;
+		}
+#endif
 	}
 
 err_logo_free_data:
