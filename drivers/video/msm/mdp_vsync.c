@@ -1,4 +1,4 @@
-/* Copyright (c) 2008-2009, 2012 The Linux Foundation. All rights reserved.
+/* Copyright (c) 2008-2009, 2012-2013 The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -224,10 +224,10 @@ static void mdp_set_sync_cfg_0(struct msm_fb_data_type *mfd, int vsync_cnt)
 {
 	unsigned long cfg;
 
-       if (mfd->panel_info.lcd.total_lines)
-               cfg = mfd->panel_info.lcd.total_lines;
-       else
-               cfg = mfd->total_lcd_lines - 1;
+	if (mfd->panel_info.lcd.total_lines)
+		cfg = mfd->panel_info.lcd.total_lines;
+	else
+		cfg = mfd->total_lcd_lines - 1;
 
 	cfg <<= MDP_SYNCFG_HGT_LOC;
 	if (mfd->panel_info.lcd.hw_vsync_mode)
@@ -241,10 +241,11 @@ static void mdp_set_sync_cfg_0(struct msm_fb_data_type *mfd, int vsync_cnt)
 static void mdp_set_sync_cfg_1(struct msm_fb_data_type *mfd, int vsync_cnt)
 {
 	unsigned long cfg;
-       if (mfd->panel_info.lcd.total_lines)
-               cfg = mfd->panel_info.lcd.total_lines;
-       else
-               cfg = mfd->total_lcd_lines - 1;
+
+	if (mfd->panel_info.lcd.total_lines)
+		cfg = mfd->panel_info.lcd.total_lines;
+	else
+		cfg = mfd->total_lcd_lines - 1;
 
 	cfg <<= MDP_SYNCFG_HGT_LOC;
 	if (mfd->panel_info.lcd.hw_vsync_mode)
