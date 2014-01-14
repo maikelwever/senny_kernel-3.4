@@ -833,7 +833,7 @@ int pyramid_mdp_gamma(void)
 
 static struct msm_panel_common_pdata mdp_pdata = {
 	.gpio = GPIO_LCD_TE,
-	.mdp_max_clk = 266667000,
+	.mdp_max_clk = 200000000,
 	.mdp_max_bw = 2000000000,
 	.mdp_bw_ab_factor = 115,
 	.mdp_bw_ib_factor = 150,
@@ -1723,8 +1723,8 @@ static int __init mipi_cmd_novatek_blue_qhd_pt_init(void)
 //	pinfo.clk_rate = 454000000;
 	pinfo.lcd.vsync_enable = TRUE;
 	pinfo.lcd.hw_vsync_mode = TRUE;
-	pinfo.lcd.refx100 = 6096;
-	pinfo.mipi.frame_rate = 30;
+	pinfo.lcd.refx100 = 6200;
+	pinfo.mipi.frame_rate = 60;
 	pinfo.mipi.mode = DSI_CMD_MODE;
 	pinfo.mipi.dst_format = DSI_CMD_DST_FORMAT_RGB888;
 	pinfo.mipi.vc = 0;
