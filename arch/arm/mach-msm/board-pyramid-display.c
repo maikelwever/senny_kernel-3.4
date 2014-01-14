@@ -842,6 +842,9 @@ static struct msm_panel_common_pdata mdp_pdata = {
 #endif
 	.mdp_rev = MDP_REV_41,
 	.mem_hid = BIT(ION_CP_WB_HEAP_ID),
+	.cont_splash_enabled = 0x00,
+	.splash_screen_addr = 0x00,
+	.splash_screen_size = 0x00,
 	.mdp_iommu_split_domain = 0,
 	.mdp_gamma = pyramid_mdp_gamma,
 };
@@ -1006,9 +1009,15 @@ static int mipi_dsi_panel_power(const int on)
 	return 0;
 }
 
+static char mipi_dsi_splash_is_enabled(void)
+{
+       return mdp_pdata.cont_splash_enabled;
+}
+
 static struct mipi_dsi_platform_data mipi_dsi_pdata = {
 	.vsync_gpio = GPIO_LCD_TE,
 	.dsi_power_save = mipi_dsi_panel_power,
+	.splash_is_enabled = mipi_dsi_splash_is_enabled,
 };
 
 static struct dsi_buf panel_tx_buf;
@@ -1719,12 +1728,12 @@ static int __init mipi_cmd_novatek_blue_qhd_pt_init(void)
 	pinfo.bl_max = 255;
 	pinfo.bl_min = 1;
 	pinfo.fb_num = 2;
-	pinfo.clk_rate = 482000000;
+//	pinfo.clk_rate = 482000000;
 //	pinfo.clk_rate = 454000000;
 	pinfo.lcd.vsync_enable = TRUE;
 	pinfo.lcd.hw_vsync_mode = TRUE;
 	pinfo.lcd.refx100 = 6096;
-	pinfo.mipi.frame_rate = 30;
+	pinfo.mipi.frame_rate = 60;
 	pinfo.mipi.mode = DSI_CMD_MODE;
 	pinfo.mipi.dst_format = DSI_CMD_DST_FORMAT_RGB888;
 	pinfo.mipi.vc = 0;

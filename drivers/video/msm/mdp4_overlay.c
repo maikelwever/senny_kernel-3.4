@@ -601,7 +601,7 @@ void mdp4_overlay_dmap_cfg(struct msm_fb_data_type *mfd, int lcdc)
 
 	mdp_pipe_ctrl(MDP_CMD_BLOCK, MDP_BLOCK_POWER_ON, FALSE);
 
-#if !defined(CONFIG_FB_MSM_LCDC_CHIMEI_WXGA_PANEL) && !defined(CONFIG_MACH_TENDERLOIN)
+#ifndef CONFIG_FB_MSM_LCDC_CHIMEI_WXGA_PANEL
 	if (lcdc)
 		dma2_cfg_reg |= DMA_PACK_ALIGN_MSB;
 #endif
@@ -810,11 +810,6 @@ void mdp4_overlay_rgb_setup(struct mdp4_overlay_pipe *pipe)
 	uint32 offset = 0;
 	int pnum;
 
-#ifdef CONFIG_MACH_TENDERLOIN
-	pipe->op_mode |= MDP4_OP_FLIP_LR;
-	pipe->op_mode |= MDP4_OP_FLIP_UD;
-#endif
-
 	pnum = pipe->pipe_num - OVERLAY_PIPE_RGB1; /* start from 0 */
 	rgb_base = MDP_BASE + MDP4_RGB_BASE;
 	rgb_base += (MDP4_RGB_OFF * pnum);
@@ -839,11 +834,6 @@ void mdp4_overlay_rgb_setup(struct mdp4_overlay_pipe *pipe)
 
 #ifdef MDP4_IGC_LUT_ENABLE
 	pipe->op_mode |= MDP4_OP_IGC_LUT_EN;
-#endif
-
-#ifdef CONIG_MACH_TENDERLOIN
-	pipe->op_mode |= MDP4_OP_FLIP_LR;
-	pipe->op_mode |= MDP4_OP_FLIP_UD;
 #endif
 
 	mdp4_scale_setup(pipe);
@@ -1060,7 +1050,8 @@ void mdp4_overlay_vg_setup(struct mdp4_overlay_pipe *pipe)
 
 	/* TILE frame size */
 	if (pipe->frame_format != MDP4_FRAME_FORMAT_LINEAR) {
-		if (ctrl->panel_mode & MDP4_PANEL_DSI_CMD)
+		if ((ctrl->panel_mode & MDP4_PANEL_DSI_CMD && pipe->mixer_num == 0) ||
+			(ctrl->panel_mode & MDP4_PANEL_WRITEBACK && pipe->mixer_num == 2))
 			outpdw(vg_base + 0x0048, frame_size);
 		else
 			pipe->frame_size = frame_size;
@@ -2739,11 +2730,6 @@ static int mdp4_overlay_req2pipe(struct mdp_overlay *req, int mixer,
 
 	pipe->op_mode = 0;
 
-#ifdef CONFIG_MACH_TENDERLOIN
-	pipe->op_mode |= MDP4_OP_FLIP_LR;
-	pipe->op_mode |= MDP4_OP_FLIP_UD;
-#endif
-
 	if (req->flags & MDP_FLIP_LR)
 		pipe->op_mode |= MDP4_OP_FLIP_LR;
 
@@ -2902,11 +2888,7 @@ static int mdp4_calc_req_mdp_clk(struct msm_fb_data_type *mfd,
 	 * factor. Ideally this factor is passed from board file.
 	 */
 	if (rst < pclk) {
-#ifdef CONFIG_ARCH_MSM8X60 // Temp workaround while we figure this out
-                rst = ((pclk >> shift) * 2) << shift;
-#else
-                rst = ((pclk >> shift) * 23 / 20) << shift;
-#endif
+		rst = ((pclk >> shift) * 23 / 20) << shift;
 		pr_debug("%s calculated mdp clk is less than pclk.\n",
 			__func__);
 	}
