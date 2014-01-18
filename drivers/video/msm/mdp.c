@@ -3269,13 +3269,6 @@ static int mdp_probe(struct platform_device *pdev)
 			mdp_version = inpdw(MDP_BASE + 0x0);
 			mdp_pipe_ctrl(MDP_CMD_BLOCK, MDP_BLOCK_POWER_OFF,
 						FALSE);
-			if (mdp_version < 0x04030303) {
-				pr_err("%s: writeback panel not supprted\n",
-					 __func__);
-				platform_device_put(msm_fb_dev);
-				mdp_clk_ctrl(0);
-				return -ENODEV;
-			}
 			mdp4_wfd_init(0);
 			pdata->on = mdp4_overlay_writeback_on;
 			pdata->off = mdp4_overlay_writeback_off;
