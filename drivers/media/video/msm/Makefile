@@ -8,7 +8,7 @@ ifeq ($(CONFIG_MSM_CAMERA_V4L2),y)
   EXTRA_CFLAGS += -Idrivers/media/video/msm/io
   EXTRA_CFLAGS += -Idrivers/media/video/msm/sensors
   obj-$(CONFIG_MSM_CAMERA) += msm_isp.o msm.o msm_mem.o msm_mctl.o msm_mctl_buf.o msm_mctl_pp.o
-  obj-$(CONFIG_MSM_CAMERA) += rawchip-v4l2/ io/ sensors/ actuators/ csi/
+  obj-$(CONFIG_MSM_CAMERA) += rawchip-v4l2/ io/ sensors/ actuators/ csi/ wfd/
 else
 ifeq ($(CONFIG_ARCH_MSM8X60),y)
   obj-$(CONFIG_MSM_CAMERA) += msm_camera-8x60.o sensors/
