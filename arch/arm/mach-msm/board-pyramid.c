@@ -96,7 +96,7 @@
 #ifdef CONFIG_FB_MSM_HDMI_MHL
 #include <mach/mhl.h>
 #endif
-
+#include <linux/msm_tsens.h>
 #include "board-pyramid.h"
 #include "devices.h"
 #include "devices-msm8x60.h"
@@ -2270,10 +2270,19 @@ static struct platform_device *early_devices[] __initdata = {
 #endif
 };
 
+static struct tsens_platform_data pyr_tsens_pdata  = {
+		.tsens_factor		= 1000,
+		.hw_type		= MSM_8660,
+		.tsens_num_sensor	= 6,
+		.slope 			= 702,
+};
+
+/*
 static struct platform_device msm_tsens_device = {
 	.name   = "tsens-tm",
 	.id = -1,
 };
+*/
 
 #ifdef CONFIG_SENSORS_MSM_ADC
 static struct adc_access_fn xoadc_fn = {
@@ -2610,7 +2619,7 @@ static struct platform_device *pyramid_devices[] __initdata = {
 #ifdef CONFIG_LEDS_PM8058
 	&pm8058_leds,
 #endif
-	&msm_tsens_device,
+//	&msm_tsens_device,
 	&cable_detect_device,
 	&msm8660_rpm_device,
 #ifdef CONFIG_ION_MSM
@@ -4344,7 +4353,7 @@ static void __init msm8x60_init(struct msm_board_data *board_data)
 
 	raw_speed_bin = readl(QFPROM_SPEED_BIN_ADDR);
 	speed_bin = raw_speed_bin & 0xF;
-
+msm_tsens_early_init(&pyr_tsens_pdata);
 	pmic_reset_irq = PM8058_IRQ_BASE + PM8058_RESOUT_IRQ;
 
 	BUG_ON(msm_rpm_init(&msm8660_rpm_data));
