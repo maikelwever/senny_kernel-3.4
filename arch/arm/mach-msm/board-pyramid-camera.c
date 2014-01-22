@@ -587,7 +587,7 @@ static struct msm_camera_sensor_platform_info sensor_s5k3h1gx_board_info = {
 
 static struct camera_flash_cfg msm_camera_sensor_s5k3h1gx_flash_cfg = {
 	.low_temp_limit		= 5,
-	.low_cap_limit		= 15,
+	.low_cap_limit		= 1,
 };
 
 static struct msm_camera_sensor_flash_data flash_s5k3h1gx = {
