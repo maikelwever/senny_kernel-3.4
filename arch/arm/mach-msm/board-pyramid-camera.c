@@ -265,22 +265,50 @@ struct msm_camera_device_platform_data msm_camera_csi_device_data[] = {
 	.cam_bus_scale_table = &cam_bus_client_pdata,
 	},
 };
-
+int aat1271_flashlight_control(int mode);
 #ifdef CONFIG_MSM_CAMERA_FLASH
-int flashlight_control(int mode)
+static int flashlight_control(int mode)
 {
-#ifdef CONFIG_FLASHLIGHT_AAT1271
-	return aat1271_flashlight_control(mode);
-#else
-	return 0;
-#endif
+/* HTC_START Turn off backlight when flash on */
+        int        rc;
+        static int brightness = 255;
+        static int backlight_off = 0;
+
+        pr_info("[CAM] %s, linear led, mode %d backlight_off %d", __func__, mode, backlight_off);
+
+        if (mode != FL_MODE_PRE_FLASH && mode != FL_MODE_OFF) {
+                if (!backlight_off) {
+                        /* restore backlight brightness value first */
+                        brightness = led_brightness_value_get("lcd-backlight");
+                        if (brightness >= 0 && brightness <= 255) {
+                                pr_info("[CAM] %s, Turn off backlight before flashlight, brightness %d", __func__, brightness);
+                                led_brightness_value_set("lcd-backlight", 0);
+                                backlight_off = 1;
+                        } else
+                                pr_err("[CAM] %s, Invalid brightness value!! brightness %d", __func__, brightness);
+                }
+        }
+
+        rc = aat1271_flashlight_control(mode);
+
+        if (mode == FL_MODE_PRE_FLASH || mode == FL_MODE_OFF) {
+                if(backlight_off) {
+                        pr_info("[CAM] %s, Turn on backlight after flashlight, brightness %d", __func__, brightness);
+                        led_brightness_value_set("lcd-backlight", brightness);
+                        backlight_off = 0;
+                }
+        }
+
+        return rc;
+/* HTC_END */
 }
+
 
 static struct msm_camera_sensor_flash_src msm_flash_src = {
 	.flash_sr_type = MSM_CAMERA_FLASH_SRC_CURRENT_DRIVER,
 	.camera_flash = flashlight_control,
 };
-#endif
+
 
 static struct regulator *pyramid_reg_8058_l9 = NULL;
 static struct regulator *pyramid_reg_8058_l10 = NULL;
@@ -403,7 +431,6 @@ static void pyramid_config_camera_off_gpios(void)
 		ARRAY_SIZE(camera_off_gpio_table));
 }
 
-#ifdef CONFIG_S5K3H1GX
 static int pyramid_s5k3h1gx_vreg_on(void)
 {
 	static int first_run = 1;
