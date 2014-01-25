@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 1999-2013, Broadcom Corporation
- * 
+ *
  *      Unless you and Broadcom execute a separate written software license
  * agreement governing use of this software, this software is licensed to you
  * under the terms of the GNU General Public License version 2 (the "GPL"),
@@ -14,43 +14,39 @@
  * the license of that module.  An independent module is a module which is not
  * derived from this software.  The special exception does not apply to any
  * modifications of the software.
- * 
+ *
  *      Notwithstanding the above, under no circumstances may you combine this
  * software in any way with any other Broadcom software provided under a license
  * other than the GPL, without Broadcom's express prior written consent.
  *
- * $Id: epivers.h.in,v 13.33 2010-09-08 22:08:53 csm Exp $
+ * Fundamental constants relating to 802.3
  *
-*/
+ * $Id: 802.3.h 417942 2013-08-13 07:53:57Z $
+ */
 
-#ifndef _epivers_h_
-#define _epivers_h_
+#ifndef _802_3_h_
+#define _802_3_h_
 
-#define	EPI_MAJOR_VERSION	1
+/* This marks the start of a packed structure section. */
+#include <packed_section_start.h>
 
-#define	EPI_MINOR_VERSION	88
+#define SNAP_HDR_LEN	6	/* 802.3 SNAP header length */
+#define DOT3_OUI_LEN	3	/* 802.3 oui length */
 
-#define	EPI_RC_NUMBER		45
+BWL_PRE_PACKED_STRUCT struct dot3_mac_llc_snap_header {
+	uint8	ether_dhost[ETHER_ADDR_LEN];	/* dest mac */
+	uint8	ether_shost[ETHER_ADDR_LEN];	/* src mac */
+	uint16	length;				/* frame length incl header */
+	uint8	dsap;				/* always 0xAA */
+	uint8	ssap;				/* always 0xAA */
+	uint8	ctl;				/* always 0x03 */
+	uint8	oui[DOT3_OUI_LEN];		/* RFC1042: 0x00 0x00 0x00
+						 * Bridge-Tunnel: 0x00 0x00 0xF8
+						 */
+	uint16	type;				/* ethertype */
+} BWL_POST_PACKED_STRUCT;
 
-#define	EPI_INCREMENTAL_NUMBER	0
+/* This marks the end of a packed structure section. */
+#include <packed_section_end.h>
 
-#define	EPI_BUILD_NUMBER	0
-
-#define	EPI_VERSION		1, 88, 45, 0
-
-#define	EPI_VERSION_NUM		0x01582d00
-
-#define EPI_VERSION_DEV		1.88.45
-
-/* Driver Version String, ASCII, 32 chars max */
-#ifdef BCMINTERNAL
-#define	EPI_VERSION_STR		"1.88.45 (r BCMINT)"
-#else
-#ifdef WLTEST
-#define	EPI_VERSION_STR		"1.88.45 (r WLTEST)"
-#else
-#define	EPI_VERSION_STR		"1.88.45 (r)"
-#endif
-#endif /* BCMINTERNAL */
-
-#endif /* _epivers_h_ */
+#endif	/* #ifndef _802_3_h_ */

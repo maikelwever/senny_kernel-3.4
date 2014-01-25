@@ -24,7 +24,7 @@
  * software in any way with any other Broadcom software provided under a license
  * other than the GPL, without Broadcom's express prior written consent.
  *
- * $Id: dhd.h 407649 2013-06-13 19:55:14Z $
+ * $Id: dhd.h 419132 2013-08-19 21:33:05Z $
  */
 
 /****************
@@ -119,8 +119,8 @@ enum dhd_op_flags {
 #define MAX_CNTL_RX_TIMEOUT 1
 #endif /* MAX_CNTL_RX_TIMEOUT */
 
-#define DHD_SCAN_ASSOC_ACTIVE_TIME	40 /* ms: Embedded default Active setting from DHD */
-#define DHD_SCAN_UNASSOC_ACTIVE_TIME 80 /* ms: Embedded def. Unassoc Active setting from DHD */
+#define DHD_SCAN_ASSOC_ACTIVE_TIME	20 /* ms: Embedded default Active setting from DHD */
+#define DHD_SCAN_UNASSOC_ACTIVE_TIME	30 /* ms: Embedded def. Unassoc Active setting from DHD */
 #define DHD_SCAN_PASSIVE_TIME		130 /* ms: Embedded default Passive setting from DHD */
 
 #ifndef POWERUP_MAX_RETRY
@@ -272,10 +272,6 @@ typedef struct dhd_pub {
 	/* Suspend disable flag and "in suspend" flag */
 	int suspend_disable_flag; /* "1" to disable all extra powersaving during suspend */
 	int in_suspend;			/* flag set to 1 when early suspend called */
-#ifdef PNO_SUPPORT
-	int pno_enable;                 /* pno status : "1" is pno enable */
-	int pno_suspend;		/* pno suspend status : "1" is pno suspended */
-#endif /* PNO_SUPPORT */
 	/* DTIM skip value, default 0(or 1) means wake each DTIM
 	 * 3 means skip 2 DTIMs and wake up 3rd DTIM(9th beacon when AP DTIM is 3)
 	 */
@@ -297,6 +293,7 @@ typedef struct dhd_pub {
  *  For ICS MR1 releases it should be disable to be compatable with ICS MR1 Framework
  *  see target dhd-cdc-sdmmc-panda-cfg80211-icsmr1-gpl-debug in Makefile
  */
+/* #define WL_ENABLE_P2P_IF		1 */
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 25)) && 1
 	struct mutex 	wl_start_stop_lock; /* lock/unlock for Android start/stop */
@@ -317,6 +314,12 @@ typedef struct dhd_pub {
 	/* platform specific function for wlfc_enable and wlfc_deinit */
 	void (*plat_enable)(void *dhd);
 	void (*plat_deinit)(void *dhd);
+#endif
+#ifdef PNO_SUPPORT
+	void *pno_state;
+#endif
+#ifdef ROAM_AP_ENV_DETECTION
+	bool	roam_env_detection;
 #endif
 	bool	dongle_isolation;
 	bool	dongle_trap_occured;	/* flag for sending HANG event to upper layer */
@@ -342,11 +345,8 @@ typedef struct dhd_pub {
 	int tcp_ack_info_cnt;
 	tcp_ack_info_t tcp_ack_info_tbl[MAXTCPSTREAMS];
 #endif /* DHDTCPACK_SUPPRESS */
-#if defined(ARP_OFFLOAD_SUPPORT)
 	uint32 arp_version;
-#endif
 } dhd_pub_t;
-
 typedef struct dhd_cmn {
 	osl_t *osh;		/* OSL handle */
 	dhd_pub_t *dhd;
@@ -399,6 +399,11 @@ typedef struct dhd_cmn {
 #undef	SPINWAIT_SLEEP
 #define SPINWAIT_SLEEP(a, exp, us) SPINWAIT(exp, us)
 #endif /* DHDTHREAD */
+
+#ifndef OSL_SLEEP
+#define OSL_SLEEP(ms)		OSL_DELAY(ms*1000)
+#endif /* OSL_SLEEP */
+
 #define DHD_IF_VIF	0x01	/* Virtual IF (Hidden from user) */
 
 unsigned long dhd_os_spin_lock(dhd_pub_t *pub);
@@ -410,6 +415,7 @@ extern int dhd_os_wake_unlock(dhd_pub_t *pub);
 extern int dhd_os_wake_lock_timeout(dhd_pub_t *pub);
 extern int dhd_os_wake_lock_rx_timeout_enable(dhd_pub_t *pub, int val);
 extern int dhd_os_wake_lock_ctrl_timeout_enable(dhd_pub_t *pub, int val);
+extern int dhd_os_wake_lock_ctrl_timeout_cancel(dhd_pub_t *pub);
 extern int dhd_os_wd_wake_lock(dhd_pub_t *pub);
 extern int dhd_os_wd_wake_unlock(dhd_pub_t *pub);
 
@@ -435,7 +441,7 @@ inline static void MUTEX_UNLOCK_SOFTAP_SET(dhd_pub_t * dhdp)
 }
 
 #define DHD_OS_WAKE_LOCK(pub)			dhd_os_wake_lock(pub)
-#define DHD_OS_WAKE_UNLOCK(pub)			dhd_os_wake_unlock(pub)
+#define DHD_OS_WAKE_UNLOCK(pub)		dhd_os_wake_unlock(pub)
 #define DHD_OS_WD_WAKE_LOCK(pub)		dhd_os_wd_wake_lock(pub)
 #define DHD_OS_WD_WAKE_UNLOCK(pub)		dhd_os_wd_wake_unlock(pub)
 #define DHD_OS_WAKE_LOCK_TIMEOUT(pub)		dhd_os_wake_lock_timeout(pub)
@@ -443,14 +449,18 @@ inline static void MUTEX_UNLOCK_SOFTAP_SET(dhd_pub_t * dhdp)
 	dhd_os_wake_lock_rx_timeout_enable(pub, val)
 #define DHD_OS_WAKE_LOCK_CTRL_TIMEOUT_ENABLE(pub, val) \
 	dhd_os_wake_lock_ctrl_timeout_enable(pub, val)
-#define DHD_PACKET_TIMEOUT_MS	1000
+#define DHD_OS_WAKE_LOCK_CTRL_TIMEOUT_CANCEL(pub) \
+	dhd_os_wake_lock_ctrl_timeout_cancel(pub)
+#define DHD_PACKET_TIMEOUT_MS	500
 #define DHD_EVENT_TIMEOUT_MS	1500
+
 
 /* interface operations (register, remove) should be atomic, use this lock to prevent race
  * condition among wifi on/off and interface operation functions
  */
 void dhd_net_if_lock(struct net_device *dev);
 void dhd_net_if_unlock(struct net_device *dev);
+
 
 typedef struct dhd_if_event {
 	uint8 ifidx;
@@ -561,23 +571,6 @@ extern void dhd_set_version_info(dhd_pub_t *pub, char *fw);
 extern int dhd_keep_alive_onoff(dhd_pub_t *dhd);
 #endif /* KEEP_ALIVE */
 
-#ifdef PNO_SUPPORT
-extern int dhd_pno_enable(dhd_pub_t *dhd, int pfn_enabled);
-extern int dhd_pnoenable(dhd_pub_t *dhd, int pfn_enabled);
-extern int dhd_pno_clean(dhd_pub_t *dhd);
-extern int dhd_pno_set(dhd_pub_t *dhd, wlc_ssid_t* ssids_local, int nssid,
-                       ushort  scan_fr, int pno_repeat, int pno_freq_expo_max);
-extern int dhd_pno_get_status(dhd_pub_t *dhd);
-extern int dhd_dev_pno_reset(struct net_device *dev);
-extern int dhd_dev_pno_set(struct net_device *dev, wlc_ssid_t* ssids_local,
-                           int nssid, ushort  scan_fr, int pno_repeat, int pno_freq_expo_max);
-extern int dhd_dev_pno_enable(struct net_device *dev,  int pfn_enabled);
-extern int dhd_dev_get_pno_status(struct net_device *dev);
-extern int dhd_pno_set_add(dhd_pub_t *dhd, wl_pfn_t *netinfo, int nssid,
-	ushort scan_fr, ushort slowscan_fr, uint8 pno_repeat, uint8 pno_freq_expo_max, int16 flags);
-extern int dhd_pno_cfg(dhd_pub_t *dhd, wl_pfn_cfg_t *pcfg);
-extern int dhd_pno_suspend(dhd_pub_t *dhd, int pfn_suspend);
-#endif /* PNO_SUPPORT */
 
 #ifdef PKT_FILTER_SUPPORT
 #define DHD_UNICAST_FILTER_NUM		0
@@ -585,6 +578,7 @@ extern int dhd_pno_suspend(dhd_pub_t *dhd, int pfn_suspend);
 #define DHD_MULTICAST4_FILTER_NUM	2
 #define DHD_MULTICAST6_FILTER_NUM	3
 #define DHD_MDNS_FILTER_NUM		4
+#define DHD_ARP_FILTER_NUM		5
 extern int 	dhd_os_enable_packet_filter(dhd_pub_t *dhdp, int val);
 extern void dhd_enable_packet_filter(int value, dhd_pub_t *dhd);
 extern int net_os_enable_packet_filter(struct net_device *dev, int val);
@@ -661,7 +655,7 @@ extern int dhd_keep_alive_onoff(dhd_pub_t *dhd);
 #endif /* KEEP_ALIVE */
 
 extern bool dhd_is_concurrent_mode(dhd_pub_t *dhd);
-
+extern int dhd_iovar(dhd_pub_t *pub, int ifidx, char *name, char *cmd_buf, uint cmd_len, int set);
 typedef enum cust_gpio_modes {
 	WLAN_RESET_ON,
 	WLAN_RESET_OFF,
@@ -776,6 +770,9 @@ extern uint dhd_force_tx_queueing;
 #define CUSTOM_SUSPEND_BCN_LI_DTIM		DEFAULT_SUSPEND_BCN_LI_DTIM
 #endif
 
+#define DEFAULT_WIFI_TURNOFF_DELAY	0
+#define WIFI_TURNOFF_DELAY		DEFAULT_WIFI_TURNOFF_DELAY
+
 #ifdef RXFRAME_THREAD
 #ifndef CUSTOM_RXF_PRIO_SETTING
 #define CUSTOM_RXF_PRIO_SETTING		MAX((CUSTOM_DPC_PRIO_SETTING - 1), 1)
@@ -786,10 +783,18 @@ extern uint dhd_force_tx_queueing;
 #ifndef CUSTOM_TDLS_IDLE_MODE_SETTING
 #define CUSTOM_TDLS_IDLE_MODE_SETTING  60000 /* 60sec to tear down TDLS of not active */
 #endif
+#ifndef CUSTOM_TDLS_RSSI_THRESHOLD_HIGH
+#define CUSTOM_TDLS_RSSI_THRESHOLD_HIGH -70 /* rssi threshold for establishing TDLS link */
+#endif
+#ifndef CUSTOM_TDLS_RSSI_THRESHOLD_LOW
+#define CUSTOM_TDLS_RSSI_THRESHOLD_LOW -80 /* rssi threshold for tearing down TDLS link */
+#endif
 #endif /* WLTDLS */
 
-#define MAX_DTIM_SKIP_BEACON_ITERVAL	100 /* max allowed associated AP beacon for dtim skip */
 
+#define MAX_DTIM_SKIP_BEACON_INTERVAL	100 /* max allowed associated AP beacon for DTIM skip */
+#define MAX_DTIM_ALLOWED_INTERVAL 600 /* max allowed total beacon interval for DTIM skip */
+#define NO_DTIM_SKIP 1
 #ifdef SDTEST
 /* Echo packet generator (SDIO), pkts/s */
 extern uint dhd_pktgen;
@@ -976,18 +981,6 @@ extern void dhd_wait_event_wakeup(dhd_pub_t*dhd);
 #define IFUNLOCK(lock)  InterlockedExchange((lock), 0)
 #define IFLOCK_FREE(lock)
 #define FW_SUPPORTED(dhd, capa) ((strstr(dhd->fw_capabilities, #capa) != NULL))
-#ifdef PNO_SUPPORT
-extern int dhd_pno_enable(dhd_pub_t *dhd, int pfn_enabled);
-extern int dhd_pnoenable(dhd_pub_t *dhd, int pfn_enabled);
-extern int dhd_pno_clean(dhd_pub_t *dhd);
-extern int dhd_pno_set(dhd_pub_t *dhd, wlc_ssid_t* ssids_local, int nssid,
-                       ushort  scan_fr, int pno_repeat, int pno_freq_expo_max);
-extern int dhd_pno_get_status(dhd_pub_t *dhd);
-extern int dhd_pno_set_add(dhd_pub_t *dhd, wl_pfn_t *netinfo, int nssid, ushort scan_fr,
-	ushort slowscan_fr, uint8 pno_repeat, uint8 pno_freq_expo_max, int16 flags);
-extern int dhd_pno_cfg(dhd_pub_t *dhd, wl_pfn_cfg_t *pcfg);
-extern int dhd_pno_suspend(dhd_pub_t *dhd, int pfn_suspend);
-#endif /* PNO_SUPPORT */
 #ifdef ARP_OFFLOAD_SUPPORT
 #define MAX_IPV4_ENTRIES	8
 void dhd_arp_offload_set(dhd_pub_t * dhd, int arp_mode);
@@ -999,14 +992,12 @@ void dhd_aoe_arp_clr(dhd_pub_t *dhd, int idx);
 int dhd_arp_get_arp_hostip_table(dhd_pub_t *dhd, void *buf, int buflen, int idx);
 void dhd_arp_offload_add_ip(dhd_pub_t *dhd, uint32 ipaddr, int idx);
 #endif /* ARP_OFFLOAD_SUPPORT */
-
 #ifdef WLTDLS
-int dhd_tdls_enable_disable(dhd_pub_t *dhd, bool flag);
+int dhd_tdls_enable(struct net_device *dev, bool tdls_on, bool auto_on, struct ether_addr *mac);
 #endif
-
 /* Neighbor Discovery Offload Support */
-int dhd_ndo_enable(dhd_pub_t *dhd, int ndo_enable);
-int dhd_ndo_add_ip(dhd_pub_t *dhd, char *ipaddr, int idx);
+int dhd_ndo_enable(dhd_pub_t * dhd, int ndo_enable);
+int dhd_ndo_add_ip(dhd_pub_t *dhd, char* ipaddr, int idx);
 int dhd_ndo_remove_ip(dhd_pub_t *dhd, int idx);
 /* ioctl processing for nl80211 */
 int dhd_ioctl_process(dhd_pub_t *pub, int ifidx, struct dhd_ioctl *ioc);
@@ -1015,4 +1006,5 @@ void dhd_set_bus_state(void *bus, uint32 state);
 
 /* Remove proper pkts(either one no-frag pkt or whole fragmented pkts) */
 extern bool dhd_prec_drop_pkts(osl_t *osh, struct pktq *pq, int prec);
+
 #endif /* _dhd_h_ */
