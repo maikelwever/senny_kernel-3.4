@@ -2778,7 +2778,7 @@ static void __init reserve_ion_memory(void)
 	unsigned int i;
 	int ret;
 
-	ret = memblock_remove(MSM_ION_CAMERA_BASE, MSM_ION_CAMERA_SIZE);
+	ret = memblock_remove(MSM_ION_SF_BASE, MSM_ION_SF_SIZE);
 	BUG_ON(ret);
 
 	for (i = 0; i < ion_pdata.nr; ++i) {
