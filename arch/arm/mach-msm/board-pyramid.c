@@ -53,10 +53,10 @@
 #include <mach/irqs.h>
 #include <mach/msm_spi.h>
 
-
+#ifdef CONFIG_BT
 #include <mach/msm_serial_hs.h>
 #include <mach/htc_bdaddress.h>
-
+#endif
 
 #include <mach/msm_serial_hs_lite.h>
 #include <mach/msm_iomap.h>
@@ -1829,8 +1829,6 @@ static struct attribute_group pyramid_properties_attr_group = {
 #ifdef CONFIG_BT
 static struct msm_serial_hs_platform_data msm_uart_dm1_pdata = {
 	.inject_rx_on_wakeup = 0,
-
-	
 	.bt_wakeup_pin = PYRAMID_GPIO_BT_CHIP_WAKE,
 	.host_wakeup_pin = PYRAMID_GPIO_BT_HOST_WAKE,
 };
@@ -2283,13 +2281,6 @@ static struct tsens_platform_data pyr_tsens_pdata  = {
 		.slope 			= 702,
 };
 
-/*
-static struct platform_device msm_tsens_device = {
-	.name   = "tsens-tm",
-	.id = -1,
-};
-*/
-
 #ifdef CONFIG_SENSORS_MSM_ADC
 static struct adc_access_fn xoadc_fn = {
 	pm8058_xoadc_select_chan_and_start_conv,
@@ -2625,7 +2616,6 @@ static struct platform_device *pyramid_devices[] __initdata = {
 #ifdef CONFIG_LEDS_PM8058
 	&pm8058_leds,
 #endif
-//	&msm_tsens_device,
 	&cable_detect_device,
 	&msm8660_rpm_device,
 #ifdef CONFIG_ION_MSM
@@ -3327,9 +3317,11 @@ static struct resource pm8901_temp_alarm[] = {
 static struct regulator_consumer_supply vreg_consumers_8901_MPP0[] = {
 	REGULATOR_SUPPLY("8901_mpp0",		NULL),
 };
+
 static struct regulator_consumer_supply vreg_consumers_8901_USB_OTG[] = {
 	REGULATOR_SUPPLY("8901_usb_otg",	NULL),
 };
+
 static struct regulator_consumer_supply vreg_consumers_8901_HDMI_MVS[] = {
 	REGULATOR_SUPPLY("8901_hdmi_mvs",	NULL),
 };
@@ -3364,7 +3356,6 @@ static struct regulator_consumer_supply vreg_consumers_8901_HDMI_MVS[] = {
 
 static struct pm8901_vreg_pdata pm8901_vreg_init_pdata[PM8901_VREG_MAX] = {
 	PM8901_VREG_INIT_MPP(MPP0, 1),
-
 	PM8901_VREG_INIT_VS(USB_OTG),
 	PM8901_VREG_INIT_VS(HDMI_MVS),
 };
@@ -3392,7 +3383,6 @@ static struct mfd_cell pm8901_subdevs[] = {
 	PM8901_VREG(PM8901_VREG_ID_HDMI_MVS),
 };
 
-#ifdef CONFIG_MSM_SSBI
 static struct pm8901_platform_data pm8901_platform_data = {
         .irq_base = PM8901_IRQ_BASE,
         .irq = MSM_GPIO_TO_INT(PM8901_GPIO_INT),
@@ -3400,6 +3390,7 @@ static struct pm8901_platform_data pm8901_platform_data = {
         .sub_devices = pm8901_subdevs,
         .irq_trigger_flags = IRQF_TRIGGER_LOW,
 };
+
 static struct msm_ssbi_platform_data msm8x60_ssbi_pm8901_pdata __devinitdata = {
 	.controller_type = MSM_SBI_CTRL_PMIC_ARBITER,
 	.slave	= {
@@ -3407,24 +3398,9 @@ static struct msm_ssbi_platform_data msm8x60_ssbi_pm8901_pdata __devinitdata = {
 		.platform_data		= &pm8901_platform_data,
 	},
 };
-#else
-static struct pm8901_platform_data pm8901_platform_data = {
-	.irq_base = PM8901_IRQ_BASE,
-	.num_subdevs = ARRAY_SIZE(pm8901_subdevs),
-	.sub_devices = pm8901_subdevs,
-	.irq_trigger_flags = IRQF_TRIGGER_LOW,
-};
-
-static struct i2c_board_info pm8901_boardinfo[] __initdata = {
-	{
-		I2C_BOARD_INFO("pm8901-core", 0x55),
-		.irq = MSM_GPIO_TO_INT(PM8901_GPIO_INT),
-		.platform_data = &pm8901_platform_data,
-	},
-};
 #endif
 
-#endif /* CONFIG_PMIC8901 */
+#ifdef CONFIG_INPUT_ISL29028
 static int isl29028_power(int pwr_device, uint8_t enable)
 {
 	return 0;
@@ -3463,6 +3439,7 @@ static struct i2c_board_info i2c_isl29028_devices[] = {
 		.irq = PM8058_GPIO_IRQ(PM8058_IRQ_BASE, PYRAMID_PLS_INT),
 	},
 };
+#endif
 
 #ifdef CONFIG_INPUT_ISL29029
 static int isl29029_power(int pwr_device, uint8_t enable)
@@ -3687,14 +3664,12 @@ static void __init msm8x60_init_buses(void)
 
 #ifdef CONFIG_BT
 	bt_export_bd_address();
-#ifdef CONFIG_SERIAL_MSM_HS_BRCM
- 	msm_device_uart_dm1.name = "msm_serial_hs_brcm";
-#else
-	msm_device_uart_dm1.name = "msm_serial_hs";
-#endif
+#ifdef CONFIG_SERIAL_MSM_HS 
+	msm_uart_dm1_pdata.wakeup_irq = gpio_to_irq(PYRAMID_GPIO_BT_HOST_WAKE);
+	msm_device_uart_dm1.name = "msm_serial_hs_brcm";
 	msm_device_uart_dm1.dev.platform_data = &msm_uart_dm1_pdata;
 #endif
-
+#endif
 
 #ifdef CONFIG_MSM_BUS_SCALING
 	if (SOCINFO_VERSION_MAJOR(socinfo_get_version()) == 2) {
@@ -4451,7 +4426,9 @@ static void __init msm8x60_init(struct msm_board_data *board_data)
 
 	raw_speed_bin = readl(QFPROM_SPEED_BIN_ADDR);
 	speed_bin = raw_speed_bin & 0xF;
-msm_tsens_early_init(&pyr_tsens_pdata);
+
+	msm_tsens_early_init(&pyr_tsens_pdata);
+
 	pmic_reset_irq = PM8058_IRQ_BASE + PM8058_RESOUT_IRQ;
 
 	BUG_ON(msm_rpm_init(&msm8660_rpm_data));
