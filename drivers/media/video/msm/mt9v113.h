@@ -18,6 +18,8 @@
  *  be subject to the further written consent of HTC.
  */
 
+#include <linux/module.h>
+
 #ifndef MT9V113_H
 #define MT9V113_H
 

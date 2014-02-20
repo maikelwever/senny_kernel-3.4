@@ -176,7 +176,6 @@ int32_t msm_sensor_write_exp_gain2(struct msm_sensor_ctrl_t *s_ctrl,
 		line = fl_lines - offset;
 	} else {
 		ll_pclk = ll_pclk * fps_divider / Q10;
-		line = line / fps_divider;
 	}
 /* HTC_END */
 

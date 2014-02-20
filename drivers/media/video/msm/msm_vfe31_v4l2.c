@@ -448,6 +448,17 @@ static void vfe31_stop(void)
 		vfe31_ctrl->vfebase + VFE_GLOBAL_RESET);
 }
 
+//HTC_START 20120724-raymond to prevent IOMMU page fault after media server crash
+void try_vfe_stop(void)
+{
+	if (atomic_read(&vfe31_ctrl->vstate)) {
+		pr_info("force stop vfe31\n");
+		vfe31_stop();
+	}
+
+}
+//HTC_END 20120724-raymond to prevent IOMMU page fault after media server crash
+
 static void vfe31_subdev_notify(int id, int path)
 {
 	struct msm_vfe_resp *rp;
