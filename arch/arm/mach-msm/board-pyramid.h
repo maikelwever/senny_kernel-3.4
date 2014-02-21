@@ -23,6 +23,8 @@
 #define MSM_SMI_BASE         0x38000000
 #define MSM_SMI_SIZE         0x4000000
 
+#define MSM_FB_SIZE          roundup((960 * ALIGN(540, 32) * 4 * 3) + 0x3F4800, 4096)
+
 #define PHY_BASE_ADDR1       0x48000000
 #define SIZE_ADDR1           0x28000000
 

@@ -30,14 +30,6 @@
 #include "devices.h"
 #include "board-pyramid.h"
 
-#ifdef CONFIG_FB_MSM_TRIPLE_BUFFER
-#define MSM_FB_PRIM_BUF_SIZE (960 * ALIGN(540, 32) * 4 * 3)
-#else
-#define MSM_FB_PRIM_BUF_SIZE (960 * ALIGN(540, 32) * 4 * 2)
-#endif
-
-#define MSM_FB_SIZE roundup(MSM_FB_PRIM_BUF_SIZE + 0x3F4800, 4096)
-
 #ifdef CONFIG_FB_MSM_OVERLAY0_WRITEBACK
 #define MSM_FB_OVERLAY0_WRITEBACK_SIZE roundup((960 * ALIGN(540, 32) * 3 * 2), 4096)
 #else
@@ -1304,7 +1296,7 @@ static struct dsi_cmd_desc pyd_auo_cmd_on_cmds[] = {
 		sizeof(set_height), set_height},
 	{DTYPE_DCS_WRITE1, 1, 0, 0, 0,
 		sizeof(bkl_enable_cmds), bkl_enable_cmds},
-		{DTYPE_DCS_WRITE, 1, 0, 0, 0,
+	{DTYPE_DCS_WRITE, 1, 0, 0, 0,
 		sizeof(display_on), display_on},
 };
 
@@ -1367,15 +1359,10 @@ static int pyramid_lcd_on(struct platform_device *pdev)
 	return 0;
 }
 
-static int pyramid_early_off(struct platform_device *pdev)
- {
-   return 0;
-}
-
 static int pyramid_lcd_off(struct platform_device *pdev)
 {
 	struct msm_fb_data_type *mfd;
-	
+
 	mfd = platform_get_drvdata(pdev);
 
 	if (!mfd)
@@ -1507,7 +1494,7 @@ static struct msm_fb_panel_data pyramid_panel_data = {
 	.on	       = pyramid_lcd_on,
 	.off	       = pyramid_lcd_off,
 	.set_backlight = pyramid_set_backlight,
-	.early_off  = 	 pyramid_early_off,
+	.early_off     = 0,
 };
 
 static struct msm_panel_info pinfo;
@@ -1559,7 +1546,6 @@ static struct mipi_dsi_phy_ctrl dsi_cmd_mode_phy_db = {
         0x05, 0x14, 0x03, 0x03, 0x03, 0x54, 0x06, 0x10, 0x04, 0x03},
 };
 
-
 static int __init mipi_cmd_novatek_blue_qhd_pt_init(void)
 {
 	int ret;
@@ -1581,20 +1567,12 @@ static int __init mipi_cmd_novatek_blue_qhd_pt_init(void)
         pinfo.lcd.primary_rdptr_irq = 0;
         pinfo.lcd.primary_start_pos = pinfo.yres +
                pinfo.lcd.v_back_porch + pinfo.lcd.v_front_porch - 1;
-/*
-	pinfo.lcd.v_back_porch = 16;
-	pinfo.lcd.v_front_porch = 16;
-	pinfo.lcd.v_pulse_width = 4;
-*/
+
 	pinfo.lcdc.border_clr = 0;
 	pinfo.lcdc.underflow_clr = 0xff;
 	pinfo.lcdc.hsync_skew = 0;
 	pinfo.bl_max = 255;
 	pinfo.bl_min = 1;
-	pinfo.fb_num = 2;
-/*	pinfo.clk_rate = 482000000;
-	pinfo.clk_rate = 454000000;
-*/
 	pinfo.lcd.vsync_enable = TRUE;
 	pinfo.lcd.hw_vsync_mode = TRUE;
 	pinfo.lcd.refx100 = 6200;
@@ -1634,7 +1612,7 @@ void __init pyramid_init_fb(void)
 	platform_device_register(&wfd_panel_device);
 	platform_device_register(&wfd_device);
 #endif
-	
+
 	if (panel_type != PANEL_ID_NONE) {
 		msm_fb_register_device("mdp", &mdp_pdata);
 		msm_fb_register_device("mipi_dsi", &mipi_dsi_pdata);
