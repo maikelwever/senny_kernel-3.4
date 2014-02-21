@@ -32,8 +32,8 @@
 #define MSM_ION_MM_SIZE      0x3D00000
 #define MSM_ION_MFC_SIZE     0x100000
 #define MSM_ION_SF_SIZE      0x3000000
-#define MSM_ION_WB_SIZE      0x2FD000
-#define MSM_ION_CAMERA_SIZE  0x2A00000
+#define MSM_ION_WB_SIZE      0x600000
+#define MSM_ION_CAMERA_SIZE  0x2400000
 #define MSM_ION_AUDIO_SIZE   0x4CF000
 
 #define MSM_ION_HEAP_NUM     8
@@ -42,7 +42,7 @@
 #define MSM_ION_MM_BASE      0x38200000
 #define MSM_ION_MFC_BASE     0x3BF00000
 #define MSM_ION_CAMERA_BASE  0x40400000
-#define MSM_ION_WB_BASE      0x46400000
+#define MSM_ION_WB_BASE      0x42800000
 #define MSM_ION_SF_BASE      0x49800000
 /*** END Memory map ***/
 
