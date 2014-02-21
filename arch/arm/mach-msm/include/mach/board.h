@@ -528,7 +528,7 @@ struct mipi_dsi_panel_platform_data {
 	char dlane_swap;
 	void (*dsi_pwm_cfg)(void);
 	char enable_wled_bl_ctrl;
-	void (*gpio_set_backlight)(int bl_level);
+	unsigned char (*shrink_pwm)(int val);
 };
 
 struct lvds_panel_platform_data {
@@ -766,4 +766,3 @@ extern int dying_processors_read_proc(char *page, char **start, off_t off,
 
 extern int get_partition_num_by_name(char *name);
 #endif
-
