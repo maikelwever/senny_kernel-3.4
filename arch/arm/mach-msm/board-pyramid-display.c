@@ -1398,6 +1398,10 @@ static int pyramid_lcd_off(struct platform_device *pdev)
 
 	return 0;
 }
+static int mipi_pyramid_lcd_late_init(struct platform_device *pdev)
+{
+       return 0;
+}
 
 #define BRI_SETTING_MIN                 30
 #define BRI_SETTING_DEF                 143
@@ -1493,6 +1497,7 @@ static struct platform_driver this_driver = {
 static struct msm_fb_panel_data pyramid_panel_data = {
 	.on	       = pyramid_lcd_on,
 	.off	       = pyramid_lcd_off,
+	.late_init     = mipi_pyramid_lcd_late_init,
 	.set_backlight = pyramid_set_backlight,
 	.early_off     = 0,
 };
