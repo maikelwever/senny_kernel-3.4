@@ -60,6 +60,9 @@ static struct usb_device_id btusb_table[] = {
 	/* Generic Bluetooth USB device */
 	{ USB_DEVICE_INFO(0xe0, 0x01, 0x01) },
 
+	/* Apple-specific (Broadcom) devices */
+	{ USB_VENDOR_AND_INTERFACE_INFO(0x05ac, 0xff, 0x01, 0x01) },
+
 	/* Broadcom SoftSailing reporting vendor specific */
 	{ USB_DEVICE(0x05ac, 0x21e1) },
 
@@ -100,6 +103,16 @@ static struct usb_device_id btusb_table[] = {
 	/* Canyon CN-BTU1 with HID interfaces */
 	{ USB_DEVICE(0x0c10, 0x0000) },
 
+	/* Broadcom BCM20702A0 */
+	{ USB_DEVICE(0x0489, 0xe042) },
+	{ USB_DEVICE(0x413c, 0x8197) },
+
+	/* Foxconn - Hon Hai */
+	{ USB_DEVICE(0x0489, 0xe033) },
+
+	/*Broadcom devices with vendor specific id */
+	{ USB_VENDOR_AND_INTERFACE_INFO(0x0a5c, 0xff, 0x01, 0x01) },
+
 	{ }	/* Terminating entry */
 };
 
@@ -114,6 +127,10 @@ static struct usb_device_id blacklist_table[] = {
 
 	/* Atheros 3011 with sflash firmware */
 	{ USB_DEVICE(0x0cf3, 0x3002), .driver_info = BTUSB_IGNORE },
+	{ USB_DEVICE(0x13d3, 0x3304), .driver_info = BTUSB_IGNORE },
+	{ USB_DEVICE(0x0930, 0x0215), .driver_info = BTUSB_IGNORE },
+	{ USB_DEVICE(0x0489, 0xe03d), .driver_info = BTUSB_IGNORE },
+	{ USB_DEVICE(0x0489, 0xe027), .driver_info = BTUSB_IGNORE },
 
 	/* Atheros AR9285 Malbec with sflash firmware */
 	{ USB_DEVICE(0x03f0, 0x311d), .driver_info = BTUSB_IGNORE },
@@ -710,7 +727,8 @@ static int btusb_send_frame(struct sk_buff *skb)
 		break;
 
 	case HCI_ACLDATA_PKT:
-		if (!data->bulk_tx_ep)
+		if (!data->bulk_tx_ep || (hdev->conn_hash.acl_num < 1 &&
+						hdev->conn_hash.le_num < 1))
 			return -ENODEV;
 
 		urb = usb_alloc_urb(0, GFP_ATOMIC);
@@ -1234,22 +1252,22 @@ static void __exit btusb_exit(void)
 module_init(btusb_init);
 module_exit(btusb_exit);
 
-module_param(ignore_dga, int, 0644);
+module_param(ignore_dga, bool, 0644);
 MODULE_PARM_DESC(ignore_dga, "Ignore devices with id 08fd:0001");
 
-module_param(ignore_csr, int, 0644);
+module_param(ignore_csr, bool, 0644);
 MODULE_PARM_DESC(ignore_csr, "Ignore devices with id 0a12:0001");
 
-module_param(ignore_sniffer, int, 0644);
+module_param(ignore_sniffer, bool, 0644);
 MODULE_PARM_DESC(ignore_sniffer, "Ignore devices with id 0a12:0002");
 
-module_param(disable_scofix, int, 0644);
+module_param(disable_scofix, bool, 0644);
 MODULE_PARM_DESC(disable_scofix, "Disable fixup of wrong SCO buffer size");
 
-module_param(force_scofix, int, 0644);
+module_param(force_scofix, bool, 0644);
 MODULE_PARM_DESC(force_scofix, "Force fixup of wrong SCO buffers size");
 
-module_param(reset, int, 0644);
+module_param(reset, bool, 0644);
 MODULE_PARM_DESC(reset, "Send HCI reset command on initialization");
 
 MODULE_AUTHOR("Marcel Holtmann <marcel@holtmann.org>");

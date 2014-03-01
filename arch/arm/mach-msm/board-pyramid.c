@@ -1827,8 +1827,10 @@ static struct attribute_group pyramid_properties_attr_group = {
 #ifdef CONFIG_BT
 static struct msm_serial_hs_platform_data msm_uart_dm1_pdata = {
 	.inject_rx_on_wakeup = 0,
+#ifdef CONFIG_SERIAL_MSM_HS_BRCM
 	.bt_wakeup_pin = PYRAMID_GPIO_BT_CHIP_WAKE,
 	.host_wakeup_pin = PYRAMID_GPIO_BT_HOST_WAKE,
+#endif
 };
 
 static struct platform_device pyramid_rfkill = {
@@ -3663,6 +3665,7 @@ static void __init msm8x60_init_buses(void)
 #ifdef CONFIG_BT
 	bt_export_bd_address();
 #ifdef CONFIG_SERIAL_MSM_HS_BRCM
+	msm_uart_dm1_pdata.wakeup_irq = gpio_to_irq(PYRAMID_GPIO_BT_HOST_WAKE);
 	msm_device_uart_dm1.name = "msm_serial_hs_brcm";
 #else
 	msm_device_uart_dm1.name = "msm_serial_hs";
