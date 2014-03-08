@@ -1252,7 +1252,7 @@ static int pyramid_lcd_on(struct platform_device *pdev)
 			printk(KERN_INFO "pyramid_lcd_on PANEL_ID_PYD_SHARP\n");
 			cmdreq.cmds = pyd_sharp_cmd_on_cmds;
 			cmdreq.cmds_cnt = ARRAY_SIZE(pyd_sharp_cmd_on_cmds);
-			cmdreq.flags = CMD_REQ_COMMIT;
+			cmdreq.flags = CMD_REQ_COMMIT | CMD_CLK_CTRL;
 			cmdreq.rlen = 0;
 			cmdreq.cb = NULL;
 
@@ -1262,7 +1262,7 @@ static int pyramid_lcd_on(struct platform_device *pdev)
 			printk(KERN_INFO "pyramid_lcd_on PANEL_ID_PYD_AUO_NT\n");
 			cmdreq.cmds = pyd_auo_cmd_on_cmds;
 			cmdreq.cmds_cnt = ARRAY_SIZE(pyd_auo_cmd_on_cmds);
-			cmdreq.flags = CMD_REQ_COMMIT;
+			cmdreq.flags = CMD_REQ_COMMIT | CMD_CLK_CTRL;
 			cmdreq.rlen = 0;
 			cmdreq.cb = NULL;
 
@@ -1296,7 +1296,7 @@ static int pyramid_lcd_off(struct platform_device *pdev)
 		case PANEL_ID_PYD_SHARP:
 			cmdreq.cmds = novatek_display_off_cmds;
 			cmdreq.cmds_cnt = ARRAY_SIZE(novatek_display_off_cmds);
-			cmdreq.flags = CMD_REQ_COMMIT;
+			cmdreq.flags = CMD_REQ_COMMIT | CMD_CLK_CTRL;
 			cmdreq.rlen = 0;
 			cmdreq.cb = NULL;
 
@@ -1305,7 +1305,7 @@ static int pyramid_lcd_off(struct platform_device *pdev)
 		case PANEL_ID_PYD_AUO_NT:
 			cmdreq.cmds = novatek_display_off_cmds;
 			cmdreq.cmds_cnt = ARRAY_SIZE(novatek_display_off_cmds);
-			cmdreq.flags = CMD_REQ_COMMIT;
+			cmdreq.flags = CMD_REQ_COMMIT | CMD_CLK_CTRL;
 			cmdreq.rlen = 0;
 			cmdreq.cb = NULL;
 
