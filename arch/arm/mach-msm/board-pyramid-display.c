@@ -23,8 +23,6 @@
 #include <mach/panel_id.h>
 #include <mach/msm_bus_board.h>
 #include <linux/bootmem.h>
-#include <linux/pwm.h>
-#include <linux/pmic8058-pwm.h>
 #include <mach/debug_display.h>
 
 #include "devices.h"
@@ -34,12 +32,6 @@
 #define MSM_FB_OVERLAY0_WRITEBACK_SIZE roundup((960 * ALIGN(540, 32) * 3 * 2), 4096)
 #else
 #define MSM_FB_OVERLAY0_WRITEBACK_SIZE (0)
-#endif
-
-#ifdef CONFIG_FB_MSM_OVERLAY1_WRITEBACK
-#define MSM_FB_OVERLAY1_WRITEBACK_SIZE roundup((960 * ALIGN(540, 32) * 3 * 2), 4096)
-#else
-#define MSM_FB_OVERLAY1_WRITEBACK_SIZE (0)
 #endif
 
 #define PANEL_ID_PYD_SHARP	(0x21 | BL_MIPI | IF_MIPI | DEPTH_RGB888)
@@ -213,6 +205,7 @@ static struct msm_bus_scale_pdata mdp_bus_scale_pdata = {
 	.name = "mdp",
 };
 
+#ifdef CONFIG_FB_MSM_DTV
 static struct msm_bus_vectors dtv_bus_init_vectors[] = {
 	{
 		.src = MSM_BUS_MASTER_MDP_PORT0,
@@ -263,6 +256,7 @@ static struct msm_bus_scale_pdata dtv_bus_scale_pdata = {
 static struct lcdc_platform_data dtv_pdata = {
 	.bus_scale_table = &dtv_bus_scale_pdata,
 };
+#endif
 #endif
 
 struct mdp_table_entry pyd_color_v11[] = {
@@ -833,9 +827,6 @@ static struct msm_panel_common_pdata mdp_pdata = {
 #endif
 	.mdp_rev = MDP_REV_41,
 	.mem_hid = BIT(ION_CP_WB_HEAP_ID),
-	.cont_splash_enabled = 0x00,
-	.splash_screen_addr = 0x00,
-	.splash_screen_size = 0x00,
 	.mdp_iommu_split_domain = 0,
 	.mdp_gamma = pyramid_mdp_gamma,
 };
@@ -843,44 +834,14 @@ static struct msm_panel_common_pdata mdp_pdata = {
 void __init pyramid_mdp_writeback(struct memtype_reserve* reserve_table)
 {
 	mdp_pdata.ov0_wb_size = MSM_FB_OVERLAY0_WRITEBACK_SIZE;
-	mdp_pdata.ov1_wb_size = MSM_FB_OVERLAY1_WRITEBACK_SIZE;
 }
-
-#ifdef CONFIG_FB_MSM_WRITEBACK_MSM_PANEL
-static char wfd_check_mdp_iommu_split_domain(void)
-{
-	return mdp_pdata.mdp_iommu_split_domain;
-}
-
-static struct msm_wfd_platform_data wfd_pdata = {
-	.wfd_check_mdp_iommu_split = wfd_check_mdp_iommu_split_domain,
-};
-
-static struct platform_device wfd_panel_device = {
-	.name = "wfd_panel",
-	.id = 0,
-	.dev.platform_data = NULL,
-};
-
-static struct platform_device wfd_device = {
-	.name          = "msm_wfd",
-	.id            = -1,
-	.dev.platform_data = &wfd_pdata,
-};
-#endif
 
 /*
  * Regulator initialization moved to mipi_dsi
  */
 
-static char mipi_dsi_splash_is_enabled(void)
-{
-       return mdp_pdata.cont_splash_enabled;
-}
-
 static struct mipi_dsi_platform_data mipi_dsi_pdata = {
 	.vsync_gpio = GPIO_LCD_TE,
-	.splash_is_enabled = mipi_dsi_splash_is_enabled,
 };
 
 static struct dsi_buf panel_tx_buf;
@@ -1398,10 +1359,6 @@ static int pyramid_lcd_off(struct platform_device *pdev)
 
 	return 0;
 }
-static int mipi_pyramid_lcd_late_init(struct platform_device *pdev)
-{
-       return 0;
-}
 
 #define BRI_SETTING_MIN                 30
 #define BRI_SETTING_DEF                 143
@@ -1497,13 +1454,11 @@ static struct platform_driver this_driver = {
 static struct msm_fb_panel_data pyramid_panel_data = {
 	.on	       = pyramid_lcd_on,
 	.off	       = pyramid_lcd_off,
-	.late_init     = mipi_pyramid_lcd_late_init,
 	.set_backlight = pyramid_set_backlight,
-	.early_off     = 0,
 };
 
 static struct msm_panel_info pinfo;
-static int ch_used[3];
+static int ch_used[3] = {0, 0, 0};
 
 static int mipi_pyramid_device_register(const char* dev_name, struct msm_panel_info *pinfo,
 					u32 channel, u32 panel)
@@ -1516,7 +1471,7 @@ static int mipi_pyramid_device_register(const char* dev_name, struct msm_panel_i
 
 	ch_used[channel] = TRUE;
 
-	pdev = platform_device_alloc("mipi_novatek", (panel << 8)|channel);
+	pdev = platform_device_alloc(dev_name, (panel << 8)|channel);
 	if (!pdev)
 		return -ENOMEM;
 
@@ -1543,17 +1498,12 @@ err_device_put:
 }
 
 static struct mipi_dsi_phy_ctrl dsi_cmd_mode_phy_db = {
-/* DSI_BIT_CLK at 482MHz, 2 lane, RGB888 */
-		{0x03, 0x01, 0x01, 0x00},	/* regulator */
-		/* timing   */
-		{0xB4, 0x8D, 0x1D, 0x00, 0x20, 0x94, 0x20,
-		0x8F, 0x20, 0x03, 0x04},
-		{0x7f, 0x00, 0x00, 0x00},	/* phy ctrl */
-		{0xee, 0x02, 0x86, 0x00},	/* strength */
-		/* pll control */
-		{0x40, 0xf9, 0xb0, 0xda, 0x00, 0x50, 0x48, 0x63,
-		0x30, 0x07, 0x03,
-		0x05, 0x14, 0x03, 0x0, 0x0, 0x54, 0x06, 0x10, 0x04, 0x0},
+	{0x03, 0x01, 0x01, 0x00},
+	{0x96, 0x1E, 0x1E, 0x00, 0x3C, 0x3C, 0x1E, 0x28, 0x0b, 0x13, 0x04},
+	{0x7f, 0x00, 0x00, 0x00},
+	{0xee, 0x02, 0x86, 0x00},
+	{0x41, 0x9c, 0xb9, 0xd6, 0x00, 0x50, 0x48, 0x63, 0x01, 0x0f, 0x07,
+	0x05, 0x14, 0x03, 0x03, 0x03, 0x54, 0x06, 0x10, 0x04, 0x03 },
 };
 
 static int __init mipi_cmd_novatek_blue_qhd_pt_init(void)
@@ -1577,8 +1527,8 @@ static int __init mipi_cmd_novatek_blue_qhd_pt_init(void)
 	pinfo.lcd.v_front_porch = 16;
 	pinfo.lcd.v_pulse_width = 4;
 
-	pinfo.lcd.primary_rdptr_irq = 0;
-	pinfo.lcd.primary_start_pos = pinfo.yres +
+        pinfo.lcd.primary_rdptr_irq = 0;
+        pinfo.lcd.primary_start_pos = pinfo.yres +
                pinfo.lcd.v_back_porch + pinfo.lcd.v_front_porch - 1;
 
 	pinfo.lcdc.border_clr = 0;
@@ -1588,7 +1538,6 @@ static int __init mipi_cmd_novatek_blue_qhd_pt_init(void)
 	pinfo.bl_min = 1;
 	pinfo.lcd.vsync_enable = TRUE;
 	pinfo.lcd.hw_vsync_mode = TRUE;
-//	pinfo.clk_rate = 454000000;
 	pinfo.lcd.refx100 = 6200;
 	pinfo.mipi.frame_rate = 60;
 	pinfo.mipi.mode = DSI_CMD_MODE;
@@ -1598,10 +1547,10 @@ static int __init mipi_cmd_novatek_blue_qhd_pt_init(void)
 	pinfo.mipi.esc_byte_ratio = 4;
 	pinfo.mipi.data_lane0 = TRUE;
 	pinfo.mipi.data_lane1 = TRUE;
-	pinfo.mipi.t_clk_post = 0x22;
-	pinfo.mipi.t_clk_pre = 0x3f;
+	pinfo.mipi.t_clk_post = 0x0a;
+	pinfo.mipi.t_clk_pre = 0x1e;
 	pinfo.mipi.stream = 0;
-	pinfo.mipi.mdp_trigger = DSI_CMD_TRIGGER_NONE;
+	pinfo.mipi.mdp_trigger = DSI_CMD_TRIGGER_SW;
 	pinfo.mipi.dma_trigger = DSI_CMD_TRIGGER_SW;
 	pinfo.mipi.te_sel = 1;
 	pinfo.mipi.interleave_max = 1;
@@ -1622,17 +1571,14 @@ void __init pyramid_init_fb(void)
 {
 	platform_device_register(&msm_fb_device);
 
-#ifdef CONFIG_FB_MSM_WRITEBACK_MSM_PANEL
-	platform_device_register(&wfd_panel_device);
-	platform_device_register(&wfd_device);
-#endif
-
 	if (panel_type != PANEL_ID_NONE) {
 		msm_fb_register_device("mdp", &mdp_pdata);
 		msm_fb_register_device("mipi_dsi", &mipi_dsi_pdata);
 	}
-	
+
+#ifdef CONFIG_FB_MSM_DTV
 	msm_fb_register_device("dtv", &dtv_pdata);
+#endif
 }
 
 static int __init pyramid_panel_init(void)
